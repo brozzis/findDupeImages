@@ -1,0 +1,49 @@
+#!/bin/sh
+BASE="/Volumes/Seagate500/Pictures/"
+DIR1="/Volumes/Seagate500/Pictures/greece2009"
+DIR2="/Volumes/Seagate500/Pictures/GR2009"
+FILE1=$(basename $DIR1)
+FILE2=$(basename $DIR2)
+
+if [ ! -f $BASE ]; then
+    echo "dir $BASE not found"
+    exit
+fi
+if [ ! -f $DIR1 ]; then
+    echo "dir $DIR1 not found"
+    exit
+fi
+if [ ! -f $DIR2 ]; then
+    echo "dir $DIR2 not found"
+    exit
+fi
+
+if [ ! -f $FILE1.txt ]; then    
+    find $DIR1 -type f -name \*.CR2 -print0 | xargs -0 basename | sort > $FILE1.txt
+fi
+if [ ! -f $FILE2.txt ]; then    
+    find $DIR2 -type f -name \*.CR2 -print0 | xargs -0 basename | sort > $FILE2.txt
+fi
+
+# molto lento
+if [ ! -f $FILE1.md5 ] ; then
+    find $DIR1 -type f -name \*.CR2 -print0 | xargs -0 md5deep | sort > $FILE1.md5
+fi
+if [ ! -f $FILE2.md5 ] ; then
+    find $DIR2 -type f -name \*.CR2 -print0 | xargs -0 md5deep | sort > $FILE2.md5
+fi
+
+#
+
+for i in $(sort $FILE1.txt $FILE2.txt | uniq -u)
+do
+    find $BASE -iname $i 
+done
+
+perl insertInDB.pl $FILE1.md5 | sqlite3 check 
+perl insertInDB.pl $FILE2.md5 | sqlite3 check 
+
+sqlite3 check.db < go3.sql
+
+echo ora sarebbe da eseguire cleanup.sh
+echo se su un filesystem 
